@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="it.turin.hermesserver.controller.ServerViewController"
+      spacing="10" style="-fx-padding: 16;">
+
+    <Label text="Hermes Server — Log degli eventi" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+    <!-- TODO: sostituire con una TableView o ListView con CellFactory per colorare
+         le righe in base al livello (INFO=nero, WARNING=arancio, ERROR=rosso) -->
+    <ListView fx:id="logListView" VBox.vgrow="ALWAYS"
+              style="-fx-font-family: monospace; -fx-font-size: 13px;"/>
+
+</VBox>
