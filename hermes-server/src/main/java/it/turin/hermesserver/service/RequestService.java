@@ -58,5 +58,11 @@ public class RequestService {
         return gson.toJson(response);
     }
 
+    public String getCount(String account) {
+        long count = mailboxService.count(account);
+        serverModel.addLog(Thread.currentThread().getName() + " - account: " + account + " - email count: " + count);
+        Response<Long> response = new Response<>(200, count);
+        return gson.toJson(response);
+    }
 
 }

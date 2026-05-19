@@ -53,6 +53,11 @@ public class RequestDispatcher {
                     return service.deleteEmail(emailId, account);
                 }
 
+                case COUNT : {
+                    String account = request.getRequestParameter("account");
+                    return service.getCount(account);
+                }
+
                 default:
                     return gson.toJson(new Response<>(400, "Unknown endpoint"));
             }
@@ -68,7 +73,7 @@ public class RequestDispatcher {
 
     private static boolean validRequestForOperation(Request<?> request) {
         return switch (request.getEndpoint()) {
-            case GET_USER, PING ->
+            case GET_USER, PING, COUNT ->
                     request.validParams("account");
             case GET_EMAILS ->
                     request.validParams("account", "page");

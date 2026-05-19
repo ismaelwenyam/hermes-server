@@ -172,6 +172,18 @@ public class MailboxService {
         return emailWrapper;
     }
 
+    /**
+     * returns the number of emails for the account
+     * @param account email account
+     * @return number of emails
+     * */
+    public long count(String account) {
+        mailboxesLock.get(account).readLock().lock();
+        long emailsCount = mailboxesMetadata.get(account).getEmailCount();
+        mailboxesLock.get(account).readLock().unlock();
+        return emailsCount;
+    }
+
 
     private String computePath (String... paths) {
         return Paths.get(MailboxService.INBOXES_DIR, paths).toString();
