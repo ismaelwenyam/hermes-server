@@ -50,12 +50,11 @@ public class MailboxService {
         boolean positiveInit = true;
         for (String account : emails) {
             if (!accountExists(account)){
-                //TODO
-                positiveInit = positiveInit && persistenceManager.createDirectory(computePath(account));
-                positiveInit = positiveInit && persistenceManager.createDirectory(computePath(account, METADATA_DIR));
-                positiveInit = positiveInit && persistenceManager.createDirectory(computePath(account, MAILBOX_DIR));
-                MailboxMetadata metadata = new MailboxMetadata(1);
                 try {
+                    persistenceManager.createDirectory(computePath(account));
+                    persistenceManager.createDirectory(computePath(account, METADATA_DIR));
+                    persistenceManager.createDirectory(computePath(account, MAILBOX_DIR));
+                    MailboxMetadata metadata = new MailboxMetadata(1);
                     persistenceManager.writeMetadata(metadata, String.valueOf(1), computePath(account, METADATA_DIR), EXTENSION, false);
                     mailboxesMetadata.put(account, metadata);
                     mailboxesLock.put(account, new ReentrantReadWriteLock());

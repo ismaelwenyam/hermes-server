@@ -4,7 +4,6 @@ import it.turin.hermesserver.model.Email;
 import it.turin.hermesserver.model.MailboxMetadata;
 
 import java.io.*;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,29 +29,19 @@ public class FilePersistenceManager {
      * @param pathname
      * @return true if the directory has been created, false otherwise
      * */
-    public boolean createDirectory (String pathname) {
+    public void createDirectory (String pathname) throws Exception {
         File file = new File(pathname);
-        boolean result;
-        try {
-            result = file.mkdirs();
-            if (result)
-                System.out.println(Thread.currentThread().getName() + " created directory: " + pathname);
-        } catch (SecurityException ex) {
-            //TODO log to monitor
-            throw new SecurityException("no writing permission on: " + pathname);
-        }
-        return result;
+        file.mkdirs();
+        System.out.println(Thread.currentThread().getName() + " created directory: " + pathname);
     }
 
     /**
-     *
+     * Write an email to the specified location
      * @param data represents the email to be stored
      * @param fileId represents the id of data
      * @param pathname represents the folder where to store the data
      * @param extension file extension
-     * @return true if data has been successfully stored, false otherwise
-     *
-     * */
+     * @return true if data has been successfully stored, false otherwise */
     public boolean writeEmail(Email data, String fileId, String pathname, String extension) throws IOException {
         if (data == null) return false;
         String filename = fileId.concat(extension);
@@ -72,22 +61,20 @@ public class FilePersistenceManager {
 
 
     /**
-     *
-     * @param data represents the email to be stored
-     * @param fileId represents the id of data
-     * @param pathname represents the folder where to store the data
+     * Write a metadata to the specified location
+     * @param data      represents the email to be stored
+     * @param fileId    represents the id of data
+     * @param pathname  represents the folder where to store the data
      * @param extension file extension
-     * @param update if true updates metadata
-     * @return true if data has been successfully stored, false otherwise
-     *
-     * */
-    public boolean writeMetadata(MailboxMetadata data, String fileId, String pathname, String extension, boolean update) throws IOException {
+     * @param update    if true updates metadata
+     */
+    public void writeMetadata(MailboxMetadata data, String fileId, String pathname, String extension, boolean update) throws IOException {
         //TODO verify if update is necessary
-        if (data == null) return false;
+        if (data == null) return;
         String filename = fileId.concat(extension);
         File file = new File(pathname, filename);
         if (file.exists() && !update) {
-            return false;
+            return;
         }
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
             out.writeObject(data);
@@ -95,10 +82,11 @@ public class FilePersistenceManager {
         } catch (IOException ex) {
             throw new IOException("storing data: " + data + " to: " + file.getCanonicalPath());
         }
-        return true;
     }
 
     /**
+     * Deletes the specified email by filename in pathname.
+     *
      * @param filename represents the file to be deleted
      * @param pathname parent where resides the file to delete
      * @param extension file extension
@@ -112,13 +100,15 @@ public class FilePersistenceManager {
 
 
     /**
-     *
-     * Retrieve nrElements emails within page
+     * Reads emails from the specified pathname.
+     * The retrieved emails are in the range
+     * from = page * nrElement [inclusive] and to = min(from + nrElements, emails count) [exclusive].
+     * The emails are returned in desc ordering, in order to have the most recent email up in the list.
      *
      * @param pathname the directory path that contains the emails
      * @param nrElements the number of data files to retrieve
      * @param page the page to display
-     * @return a list of T objects representing the datas present in parent,
+     * @return a list of Email objects representing the datas present in parent,
      * if parent is a file or doesn't exists returns an empty collection
      * */
     public List<Email> readEmails(String pathname, int nrElements, int page) throws Exception {
@@ -164,8 +154,7 @@ public class FilePersistenceManager {
         File file = new File(pathname);
         if (file.isDirectory() || !file.exists()) return null;
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))){
-            MailboxMetadata data = (MailboxMetadata) in.readObject();
-            return data;
+            return (MailboxMetadata) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new Exception("error occured reading metadata");
         }
