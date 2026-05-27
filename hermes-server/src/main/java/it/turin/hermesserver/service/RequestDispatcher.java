@@ -7,12 +7,31 @@ import it.turin.hermesserver.dto.Response;
 import it.turin.hermesserver.model.Email;
 import it.turin.hermesserver.model.ServerModel;
 
+/**
+ * Dispatcher statico delle richieste JSON ricevute dal server.
+ *
+ * <p>La classe deserializza una {@link Request}, verifica endpoint e parametri
+ * minimi richiesti, quindi invoca il metodo corrispondente di
+ * {@link RequestService}. Tutte le risposte vengono restituite come JSON.</p>
+ */
 public class RequestDispatcher {
 
     private static final Gson gson = new Gson();
 
+    /**
+     * Impedisce l'istanziazione della classe di utilita'.
+     */
     private RequestDispatcher() {}
 
+    /**
+     * Gestisce una richiesta JSON del client.
+     *
+     * @param jsonRequest payload JSON ricevuto dalla socket
+     * @param service servizio applicativo da invocare
+     * @param serverModel modello usato per registrare i log
+     * @return JSON di risposta con stato applicativo e corpo coerenti con
+     *         l'endpoint richiesto
+     */
     public static String handleRequest(String jsonRequest, RequestService service, ServerModel serverModel) {
         try {
             Request<?> request = gson.fromJson(jsonRequest, Request.class);
@@ -71,6 +90,13 @@ public class RequestDispatcher {
         }
     }
 
+    /**
+     * Verifica che una richiesta contenga i campi minimi richiesti dal suo endpoint.
+     *
+     * @param request richiesta gia' deserializzata
+     * @return {@code true} se la richiesta e' compatibile con l'operazione,
+     *         {@code false} altrimenti
+     */
     private static boolean validRequestForOperation(Request<?> request) {
         return switch (request.getEndpoint()) {
             case GET_USER, PING, COUNT ->

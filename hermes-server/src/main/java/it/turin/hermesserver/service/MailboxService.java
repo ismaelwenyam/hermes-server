@@ -14,10 +14,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 /**
- * Thread-safe
- * Classe di gestione concorrente delle mailbox server.
+ * Servizio thread-safe per la gestione delle mailbox del server.
  *
- * */
+ * <p>La classe mantiene in memoria i metadati delle mailbox inizializzate e
+ * protegge le operazioni concorrenti con un {@link ReentrantReadWriteLock} per
+ * account. La persistenza effettiva di email e metadati viene delegata a
+ * {@link FilePersistenceManager}.</p>
+ */
 public class MailboxService {
     private static final String INBOXES_DIR = "C:\\Users\\arnau\\AppData\\Local\\hermes-server";
     private static final String METADATA_DIR = "metadata";
@@ -30,6 +33,11 @@ public class MailboxService {
     private final ServerModel serverModel;
     private final FilePersistenceManager persistenceManager;
 
+    /**
+     * Crea il servizio mailbox associandolo al modello del server.
+     *
+     * @param serverModel modello usato per registrare i log
+     */
     public MailboxService(ServerModel serverModel) {
         this.persistenceManager = new FilePersistenceManager();
         this.serverModel = serverModel;
@@ -37,10 +45,16 @@ public class MailboxService {
 
 
     /**
-     * Initializes the email folders and creates metadata for the accounts when the server is started for the first time.
-     * On subsequent starts, it reads the metadata for each account.
-     * @param emails accounts predefiniti
-     * */
+     * Inizializza le mailbox degli account indicati.
+     *
+     * <p>Al primo avvio crea directory e file di metadati. Negli avvii
+     * successivi rilegge i metadati esistenti e prepara i lock associati a ogni
+     * account.</p>
+     *
+     * @param emails account predefiniti da inizializzare
+     * @return {@code true} se l'inizializzazione e' completata senza errori,
+     *         {@code false} se almeno un account produce errore
+     */
     public boolean initMailBoxes (List<String> emails) {
         mailboxesMetadata = new HashMap<>(emails.size());
         mailboxesLock = new HashMap<>(emails.size());
@@ -76,17 +90,27 @@ public class MailboxService {
     }
 
     /**
-     * Checks if this email has an account
-     * @param email precompiled email
-     * */
+     * Verifica se esiste una mailbox per l'indirizzo indicato.
+     *
+     * @param email indirizzo email dell'account
+     * @return {@code true} se la directory dell'account esiste, {@code false}
+     *         altrimenti
+     */
     public boolean accountExists (String email) {
         return persistenceManager.directoryExists(computePath(email));
     }
 
     /**
-     * @param id mail id
-     * @param account user account
-     * */
+     * Elimina un'email dalla mailbox di un account.
+     *
+     * <p>L'operazione acquisisce il lock di scrittura dell'account e, in caso
+     * di successo, aggiorna anche il conteggio nei metadati persistiti.</p>
+     *
+     * @param id identificativo dell'email da eliminare
+     * @param account account proprietario della mailbox
+     * @return {@code true} se l'email e' stata eliminata e i metadati aggiornati,
+     *         {@code false} altrimenti
+     */
     public boolean deleteEmail(String id, String account) {
         boolean result = false;
         mailboxesLock.get(account).writeLock().lock();
@@ -108,10 +132,16 @@ public class MailboxService {
     }
 
     /**
-     * Saves an email to an account
-     * @param email
-     * @param account
-     * */
+     * Salva un'email nella mailbox di un account.
+     *
+     * <p>L'operazione assegna all'email l'identificativo progressivo della
+     * mailbox, scrive il file e aggiorna i metadati dell'account.</p>
+     *
+     * @param email email da salvare
+     * @param account account destinatario
+     * @return {@code true} se il salvataggio e l'aggiornamento dei metadati
+     *         riescono, {@code false} altrimenti
+     */
     public boolean saveEmail(Email email, String account) {
         System.out.println("saving mail for user: " + account);
         mailboxesLock.get(account).writeLock().lock();
@@ -138,7 +168,17 @@ public class MailboxService {
         return false;
     }
 
-    /***/
+    /**
+     * Recupera una pagina di email dalla mailbox di un account.
+     *
+     * <p>La lettura viene eseguita con lock di lettura. Se vengono restituite
+     * email, il metodo aggiorna il campo {@code lastKnownId} dei metadati con
+     * l'identificativo dell'ultima email della pagina.</p>
+     *
+     * @param account account proprietario della mailbox
+     * @param page indice della pagina da leggere, a partire da {@code 0}
+     * @return wrapper contenente il conteggio totale e la lista di email lette
+     */
     public EmailWrapper getEmails (String account, int page) {
         EmailWrapper emailWrapper = new EmailWrapper();
         List<Email> emails = new ArrayList<>();
@@ -169,10 +209,11 @@ public class MailboxService {
     }
 
     /**
-     * returns the number of emails for the account
-     * @param account email account
-     * @return number of emails
-     * */
+     * Restituisce il numero di email presenti nella mailbox dell'account.
+     *
+     * @param account account da interrogare
+     * @return conteggio corrente delle email
+     */
     public long count(String account) {
         mailboxesLock.get(account).readLock().lock();
         long emailsCount = mailboxesMetadata.get(account).getEmailCount();
@@ -181,6 +222,12 @@ public class MailboxService {
     }
 
 
+    /**
+     * Costruisce un percorso assoluto sotto la directory radice delle mailbox.
+     *
+     * @param paths segmenti del percorso da aggiungere alla directory radice
+     * @return percorso composto tramite {@link Paths#get(String, String...)}
+     */
     private String computePath (String... paths) {
         return Paths.get(MailboxService.INBOXES_DIR, paths).toString();
     }

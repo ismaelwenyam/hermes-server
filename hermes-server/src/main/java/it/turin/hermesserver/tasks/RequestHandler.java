@@ -11,6 +11,13 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Task eseguito dal pool del server per gestire una singola connessione client.
+ *
+ * <p>Il gestore legge una richiesta JSON dalla socket, valida i casi base
+ * della connessione e delega l'elaborazione a {@link RequestDispatcher}. La
+ * risposta viene inviata al client come singola riga JSON codificata in UTF-8.</p>
+ */
 public class RequestHandler implements Runnable {
 
     private static final Gson gson = new Gson();
@@ -20,6 +27,15 @@ public class RequestHandler implements Runnable {
     private final RequestService requestService;
     private final boolean mailboxServiceAlive;
 
+    /**
+     * Crea un gestore per una connessione client.
+     *
+     * @param socket socket collegata al client
+     * @param serverModel modello usato per registrare i log del server
+     * @param requestService servizio applicativo usato dal dispatcher
+     * @param mailboxServiceAlive indica se il servizio mailbox e' stato
+     *                            inizializzato correttamente
+     */
     public RequestHandler(Socket socket, ServerModel serverModel, RequestService requestService, boolean mailboxServiceAlive) {
         this.socket = socket;
         this.serverModel = serverModel;
@@ -27,6 +43,13 @@ public class RequestHandler implements Runnable {
         this.mailboxServiceAlive = mailboxServiceAlive;
     }
 
+    /**
+     * Esegue il ciclo di gestione della richiesta.
+     *
+     * <p>Il metodo legge una sola riga dalla socket, restituisce errori JSON
+     * per richieste vuote o servizio mailbox non disponibile, quindi chiude la
+     * socket nel blocco {@code finally}.</p>
+     */
     @Override
     public void run() {
         String threadName = Thread.currentThread().getName();
@@ -70,6 +93,11 @@ public class RequestHandler implements Runnable {
         }
     }
 
+    /**
+     * Chiude la socket associata al client, registrando eventuali errori.
+     *
+     * @param threadName nome del thread usato nei messaggi di log
+     */
     private void closeSocket(String threadName) {
         try {
             if (!socket.isClosed()) {

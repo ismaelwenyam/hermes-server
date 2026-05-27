@@ -11,6 +11,12 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import java.util.Arrays;
 
+/**
+ * Controller JavaFX della vista principale del server.
+ *
+ * <p>Collega la lista dei log al {@link ServerModel}, inizializza i servizi
+ * applicativi e avvia il socket server sulla porta configurata.</p>
+ */
 public class ServerViewController {
 
     private HermesServerSocket serverSocket;
@@ -18,6 +24,16 @@ public class ServerViewController {
     @FXML
     private ListView<String> logListView;
 
+    /**
+     * Inizializza controller, servizi e server socket.
+     *
+     * <p>Il metodo collega la {@link ListView} alla lista osservabile dei log,
+     * abilita lo scorrimento automatico verso l'ultimo messaggio, inizializza le
+     * mailbox predefinite e avvia l'ascolto delle connessioni client.</p>
+     *
+     * @param serverModel modello condiviso con la vista
+     * @param port porta TCP su cui avviare il server
+     */
     public void init (ServerModel serverModel, int port) {
         ObservableList<String> ol = serverModel.getLogs();
         logListView.setItems(ol);
@@ -37,6 +53,9 @@ public class ServerViewController {
         serverSocket.init();
     }
 
+    /**
+     * Arresta il server socket associato alla vista.
+     */
     public void shutdown(){
         serverSocket.stop();
     }

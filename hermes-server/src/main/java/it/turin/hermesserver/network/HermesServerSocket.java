@@ -10,6 +10,13 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Server socket TCP dell'applicazione Hermes.
+ *
+ * <p>La classe apre una {@link ServerSocket} sulla porta configurata, accetta
+ * connessioni client e affida ogni richiesta a un {@link RequestHandler}
+ * eseguito da un pool di thread.</p>
+ */
 public class HermesServerSocket implements Runnable {
     private final int port;
     private ServerSocket serverSocket;
@@ -19,6 +26,14 @@ public class HermesServerSocket implements Runnable {
     private final ServerModel serverModel;
     private final RequestService requestService;
 
+    /**
+     * Crea il server socket applicativo.
+     *
+     * @param port porta TCP su cui mettersi in ascolto
+     * @param serverModel modello usato per registrare i log del server
+     * @param requestService servizio richieste condiviso dai gestori client
+     * @param serviceAlive indica se il servizio mailbox e' disponibile
+     */
     public HermesServerSocket(int port, ServerModel serverModel, RequestService requestService, boolean serviceAlive) {
         this.port = port;
         this.serverModel = serverModel;
@@ -26,6 +41,12 @@ public class HermesServerSocket implements Runnable {
         this.serviceAlive = serviceAlive;
     }
 
+    /**
+     * Inizializza il pool di thread, apre la socket server e avvia il thread di ascolto.
+     *
+     * <p>In caso di errore di apertura della porta, l'eccezione viene registrata
+     * nel modello e il ciclo di ascolto non viene avviato.</p>
+     */
     public void init () {
         serverModel.addLog(Thread.currentThread().getName() + " - Initializing server socket");
         threadPool = Executors.newFixedThreadPool(9);
@@ -38,6 +59,12 @@ public class HermesServerSocket implements Runnable {
         }
     }
 
+    /**
+     * Esegue il ciclo di accettazione delle connessioni client.
+     *
+     * <p>Per ogni connessione accettata crea un nuovo {@link RequestHandler} e
+     * lo sottomette al pool di thread.</p>
+     */
     @Override
     public void run() {
         serverModel.addLog(Thread.currentThread().getName() + " started, listening on : " + serverSocket.getLocalPort());
@@ -52,6 +79,12 @@ public class HermesServerSocket implements Runnable {
         }
     }
 
+    /**
+     * Arresta il server socket.
+     *
+     * <p>Il metodo interrompe il ciclo di ascolto, avvia lo shutdown del pool
+     * di thread e chiude la {@link ServerSocket} se presente.</p>
+     */
     public void stop () {
         running = false;
         threadPool.shutdown();
