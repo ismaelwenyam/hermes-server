@@ -10,38 +10,61 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Class used to store data to file system.
- * */
+ * La classe {@code FilePersistenceManager} gestisce la persistenza su file system delle mailbox del server.
+ *
+ * <p>Questa classe incapsula le operazioni di basso livello necessarie per
+ * creare directory, salvare, leggere ed eliminare email e metadati. Gli oggetti
+ * vengono serializzati tramite {@link ObjectOutputStream} e riletti tramite
+ * {@link ObjectInputStream}; di conseguenza i tipi persistiti devono implementare
+ * {@link Serializable}.</p>
+ *
+ * <p>La classe non applica sincronizzazione interna. La gestione della
+ * concorrenza deve quindi essere effettuata dal chiamante.</p>
+ */
 public class FilePersistenceManager {
 
 
     /**
-     * Checks if a directory exists given a path
-     * @param pathname
-     * @return true if dir exists false otherwise
-     * */
+     * Verifica se il percorso specificato esiste ed è una directory.
+     *
+     * @param pathname percorso della directory da controllare
+     * @return {@code true} se il percorso esiste ed è una directory,
+     *         {@code false} altrimenti
+     */
     public boolean directoryExists (String pathname){
         File file = new File(pathname);
         return file.isDirectory();
     }
 
     /**
-     * @param pathname
-     * @return true if the directory has been created, false otherwise
-     * */
-    public void createDirectory (String pathname) throws Exception {
+     * Crea la directory indicata e tutte le eventuali directory padre mancanti.
+     *
+     * <p>Il metodo delega la creazione a {@link File#mkdirs()} e non segnala
+     * come errore il caso in cui la directory esista già.</p>
+     *
+     * @param pathname percorso della directory da creare
+     */
+    public void createDirectory (String pathname) {
         File file = new File(pathname);
-        file.mkdirs();
-        System.out.println(Thread.currentThread().getName() + " created directory: " + pathname);
+        if (file.mkdirs()) System.out.println(Thread.currentThread().getName() + " created directory: " + pathname);
     }
 
     /**
-     * Write an email to the specified location
-     * @param data represents the email to be stored
-     * @param fileId represents the id of data
-     * @param pathname represents the folder where to store the data
-     * @param extension file extension
-     * @return true if data has been successfully stored, false otherwise */
+     * Scrive un'email serializzata nella directory specificata.
+     *
+     * <p>Il nome del file viene costruito concatenando {@code fileId} ed
+     * {@code extension}. Se {@code data} è {@code null} o se il file di
+     * destinazione esiste già, il metodo non scrive nulla e restituisce
+     * {@code false}.</p>
+     *
+     * @param data email da salvare
+     * @param fileId identificativo usato come nome base del file
+     * @param pathname directory in cui salvare l'email
+     * @param extension estensione del file, ad esempio {@code ".bin"}
+     * @return {@code true} se l'email è stata salvata correttamente,
+     *         {@code false} se l'input è nullo o il file esiste già
+     * @throws IOException se si verifica un errore durante la scrittura
+     */
     public boolean writeEmail(Email data, String fileId, String pathname, String extension) throws IOException {
         if (data == null) return false;
         String filename = fileId.concat(extension);
@@ -53,7 +76,6 @@ public class FilePersistenceManager {
             out.writeObject(data);
             out.flush();
         } catch (IOException ex) {
-            //TODO log to monitor
             throw new IOException("storing data: " + data + " to: " + file.getCanonicalPath());
         }
         return true;
@@ -61,15 +83,21 @@ public class FilePersistenceManager {
 
 
     /**
-     * Write a metadata to the specified location
-     * @param data      represents the email to be stored
-     * @param fileId    represents the id of data
-     * @param pathname  represents the folder where to store the data
-     * @param extension file extension
-     * @param update    if true updates metadata
+     * Scrive i metadati di una mailbox nella directory specificata.
+     *
+     * <p>Il nome del file viene costruito concatenando {@code fileId} ed
+     * {@code extension}. Se il file esiste già e {@code update} è {@code false},
+     * il metodo non sovrascrive il contenuto esistente. Se {@code data} è
+     * {@code null}, il metodo termina senza effettuare operazioni.</p>
+     *
+     * @param data metadati della mailbox da salvare
+     * @param fileId identificativo usato come nome base del file
+     * @param pathname directory in cui salvare i metadati
+     * @param extension estensione del file, ad esempio {@code ".bin"}
+     * @param update se {@code true}, consente di sovrascrivere un file esistente
+     * @throws IOException se si verifica un errore durante la scrittura
      */
     public void writeMetadata(MailboxMetadata data, String fileId, String pathname, String extension, boolean update) throws IOException {
-        //TODO verify if update is necessary
         if (data == null) return;
         String filename = fileId.concat(extension);
         File file = new File(pathname, filename);
@@ -85,13 +113,17 @@ public class FilePersistenceManager {
     }
 
     /**
-     * Deletes the specified email by filename in pathname.
+     * Elimina un'email dalla directory specificata.
      *
-     * @param filename represents the file to be deleted
-     * @param pathname parent where resides the file to delete
-     * @param extension file extension
-     * @return true if files has been deleted, false otherwise
-     * */
+     * <p>Il file da eliminare viene individuato concatenando {@code filename}
+     * ed {@code extension}. Il metodo non elimina directory e restituisce
+     * {@code false} se il file non esiste.</p>
+     *
+     * @param filename nome base del file da eliminare
+     * @param pathname directory che contiene il file
+     * @param extension estensione del file, ad esempio {@code ".bin"}
+     * @return {@code true} se il file è stato eliminato, {@code false} altrimenti
+     */
     public boolean removeEmail (String filename, String pathname, String extension) {
         File file = new File(pathname, filename.concat(extension));
         if (file.isDirectory() || !file.exists()) return false;
@@ -100,17 +132,25 @@ public class FilePersistenceManager {
 
 
     /**
-     * Reads emails from the specified pathname.
-     * The retrieved emails are in the range
-     * from = page * nrElement [inclusive] and to = min(from + nrElements, emails count) [exclusive].
-     * The emails are returned in desc ordering, in order to have the most recent email up in the list.
+     * Legge una pagina di email dalla directory specificata.
      *
-     * @param pathname the directory path that contains the emails
-     * @param nrElements the number of data files to retrieve
-     * @param page the page to display
-     * @return a list of Email objects representing the datas present in parent,
-     * if parent is a file or doesn't exists returns an empty collection
-     * */
+     * <p>I file presenti nella directory vengono ordinati in base al valore
+     * numerico del nome file, in ordine decrescente, così da restituire prima
+     * le email più recenti. Il metodo assume che i file email abbiano nomi
+     * numerici con estensione {@code ".bin"}.</p>
+     *
+     * <p>La pagina parte dall'indice {@code page * nrElements}. Se il percorso
+     * non esiste, è un file o la directory non è leggibile, viene restituita una
+     * lista vuota.</p>
+     *
+     * @param pathname directory che contiene i file delle email
+     * @param nrElements numero di elementi richiesti per pagina
+     * @param page indice della pagina da leggere, a partire da {@code 0}
+     * @return lista di email deserializzate, oppure lista vuota se il percorso
+     *         non è una directory valida
+     * @throws Exception se si verifica un errore durante la lettura o la
+     *                   deserializzazione dei file
+     */
     public List<Email> readEmails(String pathname, int nrElements, int page) throws Exception {
         File dir = new File(pathname);
         if (dir.isFile() || !dir.exists()) return Collections.emptyList();
@@ -131,6 +171,15 @@ public class FilePersistenceManager {
         return getEmails(pathname, filenames);
     }
 
+    /**
+     * Deserializza le email corrispondenti ai nomi file indicati.
+     *
+     * @param pathname directory che contiene i file da leggere
+     * @param filenames nomi dei file email da deserializzare
+     * @return lista di email lette dai file
+     * @throws Exception se un file non è leggibile o non contiene un oggetto
+     *                   {@link Email} valido
+     */
     private static List<Email> getEmails(String pathname, List<String> filenames) throws Exception {
         List<Email> result = new ArrayList<>();
         for (String filename : filenames) {
@@ -146,10 +195,18 @@ public class FilePersistenceManager {
     }
 
     /**
-     * Reads the metadata from FS
-     * @param pathname represents the path to the metadata file
-     * @return MailboxMetadata
-     * */
+     * Legge i metadati di una mailbox da file system.
+     *
+     * <p>Il parametro deve puntare direttamente al file dei metadati, non alla
+     * directory che lo contiene. Se il percorso non esiste o rappresenta una
+     * directory, il metodo restituisce {@code null}.</p>
+     *
+     * @param pathname percorso completo del file dei metadati
+     * @return metadati deserializzati, oppure {@code null} se il file non esiste
+     *         o il percorso indica una directory
+     * @throws Exception se si verifica un errore durante la lettura o la
+     *                   deserializzazione del file
+     */
     public MailboxMetadata readMetadata(String pathname) throws Exception {
         File file = new File(pathname);
         if (file.isDirectory() || !file.exists()) return null;
