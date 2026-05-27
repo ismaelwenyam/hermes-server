@@ -32,8 +32,8 @@ public class ServerViewController {
         });
         MailboxService mailboxManager = new MailboxService(serverModel);
         RequestService service = new RequestService(mailboxManager, serverModel);
-        mailboxManager.initMailBoxes(Arrays.asList("ismael@hermes.it", "eileen@hermes.it", "francesco@hermes.it"));
-        this.serverSocket =  new HermesServerSocket(port, serverModel, service);
+        boolean initResult = mailboxManager.initMailBoxes(Arrays.asList("ismael@hermes.it", "eileen@hermes.it", "francesco@hermes.it"));
+        this.serverSocket =  new HermesServerSocket(port, serverModel, service, initResult);
         serverSocket.init();
     }
 

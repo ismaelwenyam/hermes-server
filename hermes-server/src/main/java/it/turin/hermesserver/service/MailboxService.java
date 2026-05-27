@@ -27,9 +27,6 @@ public class MailboxService {
     private Map<String, MailboxMetadata> mailboxesMetadata;
     private Map<String, ReentrantReadWriteLock> mailboxesLock;
 
-    private AtomicBoolean mailboxMgmAlive = new AtomicBoolean(true);
-
-
     private final ServerModel serverModel;
     private final FilePersistenceManager persistenceManager;
 
@@ -44,7 +41,7 @@ public class MailboxService {
      * On subsequent starts, it reads the metadata for each account.
      * @param emails accounts predefiniti
      * */
-    public void initMailBoxes (List<String> emails) {
+    public boolean initMailBoxes (List<String> emails) {
         mailboxesMetadata = new HashMap<>(emails.size());
         mailboxesLock = new HashMap<>(emails.size());
         boolean positiveInit = true;
@@ -75,7 +72,7 @@ public class MailboxService {
             }
         }
         if (positiveInit) serverModel.addLog(Thread.currentThread().getName() + " - mailbox manager up and running");
-        mailboxMgmAlive.set(positiveInit);
+        return positiveInit;
     }
 
     /**

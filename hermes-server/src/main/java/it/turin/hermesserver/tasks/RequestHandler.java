@@ -18,11 +18,13 @@ public class RequestHandler implements Runnable {
     private final Socket socket;
     private final ServerModel serverModel;
     private final RequestService requestService;
+    private final boolean mailboxServiceAlive;
 
-    public RequestHandler(Socket socket, ServerModel serverModel, RequestService requestService) {
+    public RequestHandler(Socket socket, ServerModel serverModel, RequestService requestService, boolean mailboxServiceAlive) {
         this.socket = socket;
         this.serverModel = serverModel;
         this.requestService = requestService;
+        this.mailboxServiceAlive = mailboxServiceAlive;
     }
 
     @Override
@@ -38,6 +40,12 @@ public class RequestHandler implements Runnable {
             serverModel.addLog(threadName + " received request: " + jsonRequest);
             if (jsonRequest == null) {
                 serverModel.addLog(threadName + " - client closed connection");
+                return;
+            }
+            if (!mailboxServiceAlive) {
+                serverModel.addLog("mailbox service not alive, returning 500");
+                String errorResponse = gson.toJson(new Response<>(500, "Internal Server Error"));
+                out.println(errorResponse);
                 return;
             }
 

@@ -15,13 +15,15 @@ public class HermesServerSocket implements Runnable {
     private ServerSocket serverSocket;
     private ExecutorService threadPool;
     private boolean running = false;
+    private final boolean serviceAlive;
     private final ServerModel serverModel;
     private final RequestService requestService;
 
-    public HermesServerSocket(int port, ServerModel serverModel, RequestService requestService) {
+    public HermesServerSocket(int port, ServerModel serverModel, RequestService requestService, boolean serviceAlive) {
         this.port = port;
         this.serverModel = serverModel;
         this.requestService = requestService;
+        this.serviceAlive = serviceAlive;
     }
 
     public void init () {
@@ -43,7 +45,7 @@ public class HermesServerSocket implements Runnable {
             try {
                 Socket socket = serverSocket.accept();
                 serverModel.addLog(Thread.currentThread().getName() + " - connection from: " + socket.getInetAddress() + ":" + socket.getPort());
-                threadPool.execute(new RequestHandler(socket, this.serverModel, this.requestService));
+                threadPool.execute(new RequestHandler(socket, this.serverModel, this.requestService, serviceAlive));
             } catch (IOException e) {
                 serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
             }
