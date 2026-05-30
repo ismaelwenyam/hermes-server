@@ -9,7 +9,6 @@ import it.turin.hermesserver.persistence.FilePersistenceManager;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
@@ -97,7 +96,9 @@ public class MailboxService {
      *         altrimenti
      */
     public boolean accountExists (String email) {
-        return persistenceManager.directoryExists(computePath(email));
+        boolean result = persistenceManager.directoryExists(computePath(email));
+        if (!result) serverModel.addLog(Thread.currentThread().getName() + " - account: " + email + " not found");
+        return result;
     }
 
     /**
@@ -148,11 +149,12 @@ public class MailboxService {
         System.out.println("lock for user: " + account);
         try {
             long gId = mailboxesMetadata.get(account).getEmailGId();
-            email.setID(gId);
+            Email mailCopy = copyEmail(email);
+            mailCopy.setID(gId);
             String id = String.valueOf(gId);
-            boolean ok = persistenceManager.writeEmail(email, id, computePath(account, MAILBOX_DIR), EXTENSION);
+            boolean ok = persistenceManager.writeEmail(mailCopy, id, computePath(account, MAILBOX_DIR), EXTENSION);
             if (ok) {
-                serverModel.addLog(Thread.currentThread().getName() + " - stored email from " + email.getSender() + " to: " + computePath(account));
+                serverModel.addLog(Thread.currentThread().getName() + " - stored email from " + mailCopy.getSender() + " to: " + computePath(account));
                 MailboxMetadata metadata = mailboxesMetadata.get(account);
                 metadata.incrementEmailGId();
                 metadata.incrementEmailCount();
@@ -230,5 +232,19 @@ public class MailboxService {
      */
     private String computePath (String... paths) {
         return Paths.get(MailboxService.INBOXES_DIR, paths).toString();
+    }
+
+    /**
+     * Crea una copia indipendente dell'email da salvare.
+     *
+     * @param email email originale
+     * @return copia dell'email con stato mutabile isolato
+     */
+    private Email copyEmail(Email email) {
+        Date sentDate = email.getSentDate();
+        Date copiedDate = sentDate == null ? null : new Date(sentDate.getTime());
+        Email copy = new Email(email.getSender(), email.getRecipients(), email.getArgument(), email.getMailBody(), copiedDate);
+        copy.setID(email.getID());
+        return copy;
     }
 }

@@ -59,7 +59,9 @@ public class Email implements Serializable {
      *
      * @return data di invio dell'email
      */
-    public Date getSentDate() {return this.sentDate;}
+    public Date getSentDate() {
+        return this.sentDate == null ? null : new Date(this.sentDate.getTime());
+    }
 
     /**
      * Restituisce il mittente dell'email.
@@ -67,6 +69,20 @@ public class Email implements Serializable {
      * @return indirizzo del mittente
      */
     public String getSender() {return this.sender;}
+
+    /**
+     * Restituisce l'oggetto dell'email.
+     *
+     * @return oggetto dell'email
+     */
+    public String getArgument() {return this.argument;}
+
+    /**
+     * Restituisce il corpo dell'email.
+     *
+     * @return corpo dell'email
+     */
+    public String getMailBody() {return this.mailBody;}
 
     /**
      * Restituisce una copia della lista dei destinatari.
