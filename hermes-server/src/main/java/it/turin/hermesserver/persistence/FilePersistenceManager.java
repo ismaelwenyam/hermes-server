@@ -163,7 +163,7 @@ public class FilePersistenceManager {
             return Integer.compare(n2, n1);
         });
         int from = page * nrElements;
-        int to = Math.min((from + nrElements) * 2, files.length);
+        int to = Math.min(from + nrElements, files.length);
         List<String> filenames = new ArrayList<>();
         for (int i = from, j = 0; i < to; i++, j++) {
             filenames.add(files[i]);
