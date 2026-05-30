@@ -7,7 +7,10 @@ import it.turin.hermesserver.model.Email;
 import it.turin.hermesserver.model.ServerModel;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.*;
 
 /**
  * Servizio applicativo che espone le operazioni richieste dai client.
@@ -72,23 +75,34 @@ public class RequestService {
      * @return JSON di una {@link Response} con stato {@code 200} se il
      *         salvataggio riesce per tutti i destinatari, {@code 404} altrimenti
      */
-    public String postEmail(Email email) {
-        List<String> recipients = email.getRecipients();
-        List<String> unvalidRecipients = new ArrayList<>();
-        boolean result = true;
-        for (String m:
-                recipients) {
-            if (!mailboxService.accountExists(m)) {
-                unvalidRecipients.add(m);
-                Response<List<String>> response = new Response<>(404, unvalidRecipients);
-                return gson.toJson(response);
-            } else {
-                boolean tempR = mailboxService.saveEmail(email, m);
-                result = tempR && result;
+    public String postEmail(Email email) throws ExecutionException, InterruptedException {
+        ExecutorService exe = Executors.newFixedThreadPool(email.getRecipients().size());
+        try {
+            boolean result = true;
+            Vector<FutureTask<Boolean>> tasks = new Vector<>();
+            //synced access to list
+            List<String> invalid = Collections.synchronizedList(new ArrayList<>());
+            for (String m : email.getRecipients()) {
+                Callable<Boolean> c = () -> {
+                    boolean outcome = false;
+                    if (!mailboxService.accountExists(m)) {
+                        invalid.add(m);
+                    }else {
+                        outcome = mailboxService.saveEmail(email, m);
+                    }
+                    return outcome;
+                };
+                FutureTask<Boolean> ft = new FutureTask<>(c);
+                tasks.add(ft);
+                exe.execute(ft);
             }
+            for (FutureTask<Boolean> ft : tasks){
+                result = result && ft.get();
+            }
+            return gson.toJson(new Response<>(result ? 200 : 400, result ? null : invalid));
+        } finally {
+            exe.shutdown();
         }
-        Response<List<String>> response = new Response<>(result ? 200 : 404, unvalidRecipients);
-        return gson.toJson(response);
     }
 
     /**
