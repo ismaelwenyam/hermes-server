@@ -83,7 +83,7 @@ public class RequestService {
             //synced access to list
             List<String> invalid = Collections.synchronizedList(new ArrayList<>());
             for (String m : email.getRecipients()) {
-                Callable<Boolean> c = () -> {
+                FutureTask<Boolean> ft = new FutureTask<>(() -> {
                     boolean outcome = false;
                     if (!mailboxService.accountExists(m)) {
                         invalid.add(m);
@@ -91,8 +91,7 @@ public class RequestService {
                         outcome = mailboxService.saveEmail(email, m);
                     }
                     return outcome;
-                };
-                FutureTask<Boolean> ft = new FutureTask<>(c);
+                });
                 tasks.add(ft);
                 exe.execute(ft);
             }
