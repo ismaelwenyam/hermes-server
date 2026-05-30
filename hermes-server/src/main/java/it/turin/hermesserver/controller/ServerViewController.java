@@ -37,6 +37,7 @@ public class ServerViewController {
     public void init (ServerModel serverModel, int port) {
         ObservableList<String> ol = serverModel.getLogs();
         logListView.setItems(ol);
+        /* TODO considerare l'uso o meno
         ol.addListener((ListChangeListener<String>) change -> {
             while (change.next()) {
                 if (change.wasAdded()) {
@@ -46,6 +47,7 @@ public class ServerViewController {
                 }
             }
         });
+        */
         MailboxService mailboxManager = new MailboxService(serverModel);
         RequestService service = new RequestService(mailboxManager, serverModel);
         boolean initResult = mailboxManager.initMailBoxes(Arrays.asList("ismael@hermes.it", "eileen@hermes.it", "francesco@hermes.it"));
