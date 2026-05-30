@@ -17,7 +17,7 @@ public class MailboxMetadata implements Serializable {
 
     private long emailGId;
     private long lastKnownId = 0L;
-    private int nrEmailsDelivering = 3;
+    private int nrEmailsDelivering = 10;
     private long emailCount = 0L;
     private final Date creationDate;
     private Date updateDate;
