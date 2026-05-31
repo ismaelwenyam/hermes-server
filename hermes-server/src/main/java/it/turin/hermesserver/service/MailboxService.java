@@ -159,6 +159,7 @@ public class MailboxService {
                 metadata.incrementEmailGId();
                 metadata.incrementEmailCount();
                 metadata.setLastKnownId(metadata.getEmailGId());
+                metadata.setNewMessage(true);
                 persistenceManager.writeMetadata(metadata, String.valueOf(1), computePath(account, METADATA_DIR), EXTENSION, true);
                 return true;
             }
@@ -186,6 +187,7 @@ public class MailboxService {
         List<Email> emails = new ArrayList<>();
         mailboxesLock.get(account).readLock().lock();
         try {
+            emailWrapper.setNewMessage(mailboxesMetadata.get(account).newMessage());
             emailWrapper.setEmailsCount(mailboxesMetadata.get(account).getEmailCount());
             int nrDelivering = mailboxesMetadata.get(account).getNrEmailsDelivering();
             emails = persistenceManager.readEmails(computePath(account, MAILBOX_DIR), nrDelivering, page);
@@ -200,6 +202,7 @@ public class MailboxService {
             try {
                 MailboxMetadata metadata = mailboxesMetadata.get(account);
                 metadata.setLastKnownId(emails.get(emails.size()-1).getID());
+                metadata.setNewMessage(false);
                 persistenceManager.writeMetadata(metadata, String.valueOf(1), computePath(account, METADATA_DIR), EXTENSION, true);
             } catch (IOException e) {
                 serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());

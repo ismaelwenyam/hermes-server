@@ -19,6 +19,16 @@ public class MailboxMetadata implements Serializable {
     private long lastKnownId = 0L;
     private int nrEmailsDelivering = 10;
     private long emailCount = 0L;
+
+    public boolean newMessage() {
+        return newMessage;
+    }
+
+    public void setNewMessage(boolean newMessage) {
+        this.newMessage = newMessage;
+    }
+
+    private boolean newMessage;
     private final Date creationDate;
     private Date updateDate;
 

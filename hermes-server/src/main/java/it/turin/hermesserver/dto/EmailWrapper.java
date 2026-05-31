@@ -13,6 +13,7 @@ import java.util.List;
  */
 public class EmailWrapper {
     private long emailsCount;
+    private boolean newMessage;
     private List<Email> emails;
 
     /**
@@ -49,5 +50,13 @@ public class EmailWrapper {
      */
     public void setEmails(List<Email> emails) {
         this.emails = emails;
+    }
+
+    public boolean isNewMessage() {
+        return newMessage;
+    }
+
+    public void setNewMessage(boolean newMessage) {
+        this.newMessage = newMessage;
     }
 }
