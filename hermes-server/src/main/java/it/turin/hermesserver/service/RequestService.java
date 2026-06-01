@@ -113,8 +113,8 @@ public class RequestService {
      *         lo stato e' {@code 200} se sono presenti email, {@code 404}
      *         se la pagina risulta vuota
      */
-    public String getEmails(String account, int page) {
-        EmailWrapper emailWrapper = mailboxService.getEmails(account, page);
+    public String getEmails(String account, int page, boolean fetchNewMail) {
+        EmailWrapper emailWrapper = mailboxService.getEmails(account, page, fetchNewMail);
         Response<EmailWrapper> response = new Response<>(emailWrapper.getEmails().isEmpty() ? 404 : 200, emailWrapper);
         return gson.toJson(response);
     }
@@ -127,9 +127,9 @@ public class RequestService {
      *         al conteggio corrente
      */
     public String getCount(String account) {
-        long count = mailboxService.count(account);
-        serverModel.addLog(Thread.currentThread().getName() + " - account: " + account + " - email count: " + count);
-        Response<Long> response = new Response<>(200, count);
+        String result = mailboxService.count(account);
+        serverModel.addLog(Thread.currentThread().getName() + " - account: " + account + " - email count: " + result);
+        Response<String> response = new Response<>(200, result);
         return gson.toJson(response);
     }
 

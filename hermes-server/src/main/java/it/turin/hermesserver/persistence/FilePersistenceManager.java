@@ -171,6 +171,22 @@ public class FilePersistenceManager {
         return getEmails(pathname, filenames);
     }
 
+    public List<Email> readEmail(String pathname) throws Exception {
+        File dir = new File(pathname);
+        if (dir.isFile() || !dir.exists()) return Collections.emptyList();
+        String[] files = dir.list();
+        if (files == null) return Collections.emptyList();
+        Arrays.sort(files, (a, b) -> {
+            int n1 = Integer.parseInt(a.replace(".bin", ""));
+            int n2 = Integer.parseInt(b.replace(".bin", ""));
+            // sort: desc order (n2, n1). asc order (n1, n2)
+            return Integer.compare(n2, n1);
+        });
+        List<String> filenames = new ArrayList<>();
+        filenames.add(files[0]);
+        return getEmails(pathname, filenames);
+    }
+
     /**
      * Deserializza le email corrispondenti ai nomi file indicati.
      *

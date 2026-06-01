@@ -59,7 +59,8 @@ public class RequestDispatcher {
                 case GET_EMAILS: {
                     String account = request.getRequestParameter("account");
                     String page = request.getRequestParameter("page");
-                    return service.getEmails(account, Integer.parseInt(page));
+                    String fetchNewMail = request.getRequestParameter("newMail");
+                    return service.getEmails(account, Integer.parseInt(page), Boolean.parseBoolean(fetchNewMail));
                 }
 
                 case POST_EMAIL: {Email mail = gson.fromJson(gson.toJson(request.getBody()), Email.class);

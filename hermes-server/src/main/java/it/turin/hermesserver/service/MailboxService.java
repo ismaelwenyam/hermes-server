@@ -182,7 +182,7 @@ public class MailboxService {
      * @param page indice della pagina da leggere, a partire da {@code 0}
      * @return wrapper contenente il conteggio totale e la lista di email lette
      */
-    public EmailWrapper getEmails (String account, int page) {
+    public EmailWrapper getEmails (String account, int page, boolean fetchNewMail) {
         EmailWrapper emailWrapper = new EmailWrapper();
         List<Email> emails = new ArrayList<>();
         mailboxesLock.get(account).readLock().lock();
@@ -190,7 +190,8 @@ public class MailboxService {
             emailWrapper.setNewMessage(mailboxesMetadata.get(account).newMessage());
             emailWrapper.setEmailsCount(mailboxesMetadata.get(account).getEmailCount());
             int nrDelivering = mailboxesMetadata.get(account).getNrEmailsDelivering();
-            emails = persistenceManager.readEmails(computePath(account, MAILBOX_DIR), nrDelivering, page);
+            if (fetchNewMail) emails = persistenceManager.readEmail(computePath(account, MAILBOX_DIR));
+            else emails = persistenceManager.readEmails(computePath(account, MAILBOX_DIR), nrDelivering, page);
             emailWrapper.setEmails(emails);
         } catch (Exception e) {
             serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
@@ -202,6 +203,7 @@ public class MailboxService {
             try {
                 MailboxMetadata metadata = mailboxesMetadata.get(account);
                 metadata.setLastKnownId(emails.get(emails.size()-1).getID());
+                //TODO consider removing
                 metadata.setNewMessage(false);
                 persistenceManager.writeMetadata(metadata, String.valueOf(1), computePath(account, METADATA_DIR), EXTENSION, true);
             } catch (IOException e) {
@@ -214,16 +216,20 @@ public class MailboxService {
     }
 
     /**
-     * Restituisce il numero di email presenti nella mailbox dell'account.
+     * Restituisce il numero di email presenti nella mailbox dell'account e se c'è una nuova mail da leggere.
      *
      * @param account account da interrogare
-     * @return conteggio corrente delle email
+     * @return conteggio corrente delle email e presenza nuova mail
      */
-    public long count(String account) {
+    public String count(String account) {
         mailboxesLock.get(account).readLock().lock();
         long emailsCount = mailboxesMetadata.get(account).getEmailCount();
+        boolean newMessage = mailboxesMetadata.get(account).newMessage();
         mailboxesLock.get(account).readLock().unlock();
-        return emailsCount;
+        mailboxesLock.get(account).writeLock().lock();
+        mailboxesMetadata.get(account).setNewMessage(false);
+        mailboxesLock.get(account).writeLock().unlock();
+        return String.valueOf(emailsCount).concat(";").concat(String.valueOf(newMessage));
     }
 
 
