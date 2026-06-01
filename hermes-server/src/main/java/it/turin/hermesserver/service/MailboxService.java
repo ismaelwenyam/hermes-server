@@ -204,7 +204,7 @@ public class MailboxService {
                 MailboxMetadata metadata = mailboxesMetadata.get(account);
                 metadata.setLastKnownId(emails.get(emails.size()-1).getID());
                 //TODO consider removing
-                metadata.setNewMessage(false);
+                //metadata.setNewMessage(false);
                 persistenceManager.writeMetadata(metadata, String.valueOf(1), computePath(account, METADATA_DIR), EXTENSION, true);
             } catch (IOException e) {
                 serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
