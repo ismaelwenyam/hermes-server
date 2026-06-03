@@ -60,6 +60,7 @@ public class MailboxService {
         boolean positiveInit = true;
         for (String account : emails) {
             if (!accountExists(account)){
+                /*
                 try {
                     persistenceManager.createDirectory(computePath(account));
                     persistenceManager.createDirectory(computePath(account, METADATA_DIR));
@@ -72,19 +73,21 @@ public class MailboxService {
                     positiveInit = false;
                     serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + ex.getMessage());
                 }
+                */
+                //serverModel.addLog(Thread.currentThread().getName() + " - " + account + " not found");
             } else {
                 MailboxMetadata metadata = null;
                 try {
                     metadata = persistenceManager.readMetadata(computePath(account, METADATA_DIR, String.valueOf(1)).concat(EXTENSION));
                     mailboxesMetadata.put(account, metadata);
                     mailboxesLock.put(account, new ReentrantReadWriteLock());
-                    serverModel.addLog(Thread.currentThread().getName() + " - account " + account + " already exists");
+                    serverModel.addLog(Thread.currentThread().getName() + " - account " + account + " found");
                 } catch (Exception e) {
                     serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
                 }
             }
         }
-        if (positiveInit) serverModel.addLog(Thread.currentThread().getName() + " - mailbox manager up and running");
+        serverModel.addLog(Thread.currentThread().getName() + " - mailbox manager up and running");
         return positiveInit;
     }
 

@@ -60,7 +60,6 @@ public class RequestHandler implements Runnable {
                 PrintWriter out = new PrintWriter(
                         new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)), true)) {
             String jsonRequest = in.readLine();
-            serverModel.addLog(threadName + " received request: " + jsonRequest);
             if (jsonRequest == null) {
                 serverModel.addLog(threadName + " - client closed connection");
                 return;
@@ -78,6 +77,7 @@ public class RequestHandler implements Runnable {
                 out.println(errorResponse);
                 return;
             }
+            serverModel.addLog(threadName + " received request: " + jsonRequest);
             String jsonResponse = RequestDispatcher.handleRequest(jsonRequest, requestService, serverModel);
 
             serverModel.addLog(threadName + " sending response...");
