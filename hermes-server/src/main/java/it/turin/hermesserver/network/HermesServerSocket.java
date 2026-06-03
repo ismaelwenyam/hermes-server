@@ -49,13 +49,13 @@ public class HermesServerSocket implements Runnable {
      */
     public void init () {
         serverModel.addLog(Thread.currentThread().getName() + " - Initializing server socket");
-        threadPool = Executors.newFixedThreadPool(9);
+        threadPool = Executors.newFixedThreadPool(2);
         try {
             serverSocket = new ServerSocket(port);
             running = true;
             new Thread(this, "SERVER-SOCKET").start();
         } catch (IOException e) {
-            serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
+            serverModel.addLog(Thread.currentThread().getName() + " - [error] - " + e.getMessage());
         }
     }
 
@@ -74,7 +74,7 @@ public class HermesServerSocket implements Runnable {
                 serverModel.addLog(Thread.currentThread().getName() + " - connection from: " + socket.getInetAddress() + ":" + socket.getPort());
                 threadPool.execute(new RequestHandler(socket, this.serverModel, this.requestService, serviceAlive));
             } catch (IOException e) {
-                serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
+                serverModel.addLog(Thread.currentThread().getName() + " - [error] - " + e.getMessage());
             }
         }
     }

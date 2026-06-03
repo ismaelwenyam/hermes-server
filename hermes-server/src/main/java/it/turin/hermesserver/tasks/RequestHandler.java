@@ -52,7 +52,7 @@ public class RequestHandler implements Runnable {
      */
     @Override
     public void run() {
-        String threadName = Thread.currentThread().getName();
+        String threadName = Thread.currentThread().getName().toUpperCase();
         serverModel.addLog(threadName + " started");
         try (
                 BufferedReader in = new BufferedReader(
@@ -84,9 +84,9 @@ public class RequestHandler implements Runnable {
             out.println(jsonResponse);
             serverModel.addLog(threadName + " response sent: " + jsonResponse);
         } catch (IOException e) {
-            serverModel.addLog(threadName + " - [IO ERROR] - " + e.getMessage());
+            serverModel.addLog(threadName + " - [io error] - " + e.getMessage());
         } catch (Exception e) {
-            serverModel.addLog(threadName + " - [UNEXPECTED ERROR] - " + e.getMessage());
+            serverModel.addLog(threadName + " - [unexpected error] - " + e.getMessage());
         } finally {
             closeSocket(threadName);
             serverModel.addLog(threadName + " end execution");
@@ -104,7 +104,7 @@ public class RequestHandler implements Runnable {
                 socket.close();
             }
         } catch (IOException e) {
-            serverModel.addLog(threadName + " - [SOCKET CLOSE ERROR] - " + e.getMessage());
+            serverModel.addLog(threadName + " - [socket close error] - " + e.getMessage());
         }
     }
 }
