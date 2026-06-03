@@ -144,9 +144,7 @@ public class MailboxService {
      *         riescono, {@code false} altrimenti
      */
     public boolean saveEmail(Email email, String account) {
-        System.out.println("saving mail for user: " + account);
         mailboxesLock.get(account).writeLock().lock();
-        System.out.println("lock for user: " + account);
         try {
             long gId = mailboxesMetadata.get(account).getEmailGId();
             Email mailCopy = copyEmail(email);
@@ -203,8 +201,6 @@ public class MailboxService {
             try {
                 MailboxMetadata metadata = mailboxesMetadata.get(account);
                 metadata.setLastKnownId(emails.get(emails.size()-1).getID());
-                //TODO consider removing
-                //metadata.setNewMessage(false);
                 persistenceManager.writeMetadata(metadata, String.valueOf(1), computePath(account, METADATA_DIR), EXTENSION, true);
             } catch (IOException e) {
                 serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
@@ -229,7 +225,7 @@ public class MailboxService {
         mailboxesLock.get(account).writeLock().lock();
         mailboxesMetadata.get(account).setNewMessage(false);
         mailboxesLock.get(account).writeLock().unlock();
-        return String.valueOf(emailsCount).concat(";").concat(String.valueOf(newMessage));
+        return String.format("count: %d - new message: %b", emailsCount, newMessage);
     }
 
 

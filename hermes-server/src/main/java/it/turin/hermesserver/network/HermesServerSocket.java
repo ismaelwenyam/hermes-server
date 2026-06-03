@@ -53,7 +53,7 @@ public class HermesServerSocket implements Runnable {
         try {
             serverSocket = new ServerSocket(port);
             running = true;
-            new Thread(this, "server-socket").start();
+            new Thread(this, "SERVER-SOCKET").start();
         } catch (IOException e) {
             serverModel.addLog(Thread.currentThread().getName() + " - [ERROR] - " + e.getMessage());
         }
