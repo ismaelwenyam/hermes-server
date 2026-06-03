@@ -228,7 +228,8 @@ public class MailboxService {
         mailboxesLock.get(account).writeLock().lock();
         mailboxesMetadata.get(account).setNewMessage(false);
         mailboxesLock.get(account).writeLock().unlock();
-        return String.format("count: %d - new message: %b", emailsCount, newMessage);
+        serverModel.addLog(Thread.currentThread().getName() + " " + String.format("count: %d - new message: %b", emailsCount, newMessage));
+        return String.valueOf(emailsCount).concat(";").concat(String.valueOf(newMessage));
     }
 
 

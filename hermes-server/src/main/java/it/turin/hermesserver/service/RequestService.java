@@ -128,7 +128,6 @@ public class RequestService {
      */
     public String getCount(String account) {
         String result = mailboxService.count(account);
-        serverModel.addLog(Thread.currentThread().getName() + " - account: " + account + " - email count: " + result);
         Response<String> response = new Response<>(200, result);
         return gson.toJson(response);
     }
